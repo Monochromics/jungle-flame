@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"time"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -58,21 +57,16 @@ func avgKillCoord(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 	payloadE := payload.Encode()
 	summoner, _ := summonerByName(ps.ByName("name"), payloadE)
 	list := matchesByAcc(summoner, payloadE)
-
-	fmt.Println(list)
-
 	tEvent, tX, tY := killAssistLocale(ps.ByName("name"), payloadE, list)
 	avgX := tX / tEvent
 	avgY := tY / tEvent
-	fmt.Fprintf(w, "Average X:  "+fmt.Sprint(avgX)+"\n")
-	fmt.Fprintf(w, "Average Y:  "+fmt.Sprint(avgY)+"\n")
 
-	fmt.Println("Endpoint Hit: Avg Kill ")
-
+	coordArr := [2]int{avgX, avgY}
+	soloKillMap(w, r, ps, coordArr[:])
 }
 
-func testJS(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	tmpl, err := template.ParseFiles("./static/killmap.gohtml")
+func soloKillMap(w http.ResponseWriter, r *http.Request, ps httprouter.Params, coord []int) {
+	tmpl, err := template.ParseFiles("./static/single/killmap.gohtml")
 	if err != nil {
 		panic(err)
 	}
@@ -80,15 +74,12 @@ func testJS(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	type Coordinates struct {
 		Coord string
 	}
-
-	entry := Coordinates{"[4123,1235]"}
+	s, _ := json.Marshal(coord)
+	entry := Coordinates{string(s)}
 	err = tmpl.Execute(w, entry)
 	if err != nil {
 		panic(err)
 	}
-
-	// http.ServeFile(w, r, "./static/killmap.gohtml")
-
 }
 
 func jungleLiveKL(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -99,25 +90,57 @@ func jungleLiveKL(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 	_, id := summonerByName(ps.ByName("name"), payloadE)
 	junglerNames := liveGameJunglers(id, payloadE)
 
-	for _, a := range junglerNames {
+	type JunglerData struct {
+		JunglerName string
+		Coords      []int
+	}
+
+	dataArray := [2]JunglerData{}
+	for i, a := range junglerNames {
 		println(a)
 		jSumm, _ := summonerByName(a, payloadE)
 		if jSumm == "" {
 			println("FAILED TO GET SUMM ID FOR : " + a)
 			break
 		}
-
-		time.Sleep(2 * time.Second)
 		println(jSumm)
 		matches := matchesByRole(jSumm, payloadE, "JUNGLE")
 		tEvent, tX, tY := killAssistLocale(a, payloadE, matches)
 		avgX := tX / tEvent
 		avgY := tY / tEvent
-		fmt.Fprintf(w, a+"\n")
-		fmt.Fprintf(w, "Average X:  "+fmt.Sprint(avgX)+"\n")
-		fmt.Fprintf(w, "Average Y:  "+fmt.Sprint(avgY)+"\n")
+		//fmt.Fprintf(w, a+"\n")
+		//fmt.Fprintf(w, "Average X:  "+fmt.Sprint(avgX)+"\n")
+		//fmt.Fprintf(w, "Average Y:  "+fmt.Sprint(avgY)+"\n")
+		coords := []int{avgX, avgY}
+		out := JunglerData{JunglerName: a, Coords: coords}
+		dataArray[i] = out
+	}
+	println(dataArray[1].JunglerName)
+	println(fmt.Sprint(dataArray[0].Coords))
+	jungleKillMaps(w, r, ps, dataArray[0].JunglerName, dataArray[0].Coords, dataArray[1].JunglerName, dataArray[1].Coords)
+
+}
+
+func jungleKillMaps(w http.ResponseWriter, r *http.Request, ps httprouter.Params, jungleA string, coordA []int, jungleB string, coordB []int) {
+	tmpl, err := template.ParseFiles("./static/junglers/killmap.gohtml")
+	if err != nil {
+		panic(err)
 	}
 
+	type Coordinates struct {
+		JungleA string
+		JungleB string
+		CoordA  string
+		CoordB  string
+	}
+
+	cUA, _ := json.Marshal(coordA)
+	cUB, _ := json.Marshal(coordB)
+	entry := Coordinates{JungleA: jungleA, JungleB: jungleB, CoordA: string(cUA), CoordB: string(cUB)}
+	err = tmpl.Execute(w, entry)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func handleRequests() {
@@ -127,7 +150,6 @@ func handleRequests() {
 	router.GET("/kills/:name", avgKillCoord)
 	router.GET("/summoner/:name", fuckingFeeder)
 	router.GET("/jkl/:name", jungleLiveKL)
-	router.GET("/test", testJS)
 
 	router.ServeFiles("/static/*filepath", http.Dir("static"))
 

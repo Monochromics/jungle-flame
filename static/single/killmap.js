@@ -4,7 +4,6 @@
 /////
 
 var coord = document.getElementById("coord")
-console.log(JSON.parse(coord.value))
 var cords = [JSON.parse(coord.value)],
     // Domain for the current Summoner's Rift on the in-game mini-map
     domain = {
@@ -46,4 +45,11 @@ svg.append('svg:g').selectAll("circle")
         .attr('cx', function(d) { return xScale(d[0]) })
         .attr('cy', function(d) { return yScale(d[1]) })
         .attr('r', 5)
-        .attr('class', 'kills');
+        .style("fill", "red")
+        .attr('class', 'avg');
+
+
+txt = d3.select("#out").append("p")
+    .attr('x', '550')
+    .attr('y', '550')
+    .text("x,y = " + coord.value);

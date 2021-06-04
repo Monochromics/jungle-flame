@@ -203,10 +203,6 @@ func killAssistLocale(name, payload string, list []int64) (totalEvent, totalX, t
 				}
 			}
 		}
-		println(totalX)
-		println(totalY)
-		println(totalEvent)
-
 	}
 	return
 }

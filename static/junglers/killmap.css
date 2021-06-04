@@ -1,0 +1,26 @@
+#map1 svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+#map1 img {
+    position: absolute;
+    top: 0;
+    left: 0;   
+}
+
+#out1 p {
+    position: relative;
+    top: 512;
+    left: 0;
+    white-space: pre;
+}
+
+
+#out2 p {
+    position: relative;
+    top: 512;
+    left: 0;
+    white-space: pre;
+}
