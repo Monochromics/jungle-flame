@@ -15,11 +15,9 @@ A few endpoints currently exist:
   + Shows you the last time this summoner fed. Queries recent matches, looks for negative KDA, outputs stats/date/champ etc
 
 + /kills/:name
-  + Find avg kill local on map for first 15 mins of the game. Needs mapped to testJS func still for mapping. 
+  + Find avg kill local on map for first 15 mins of the game. Maps on a summoners rift model 
     
 + /jkl/:name
-  + Used to query live games. Grabs kill locale data on both junglers
+  + Used to query live games. Grabs kill locale data on both junglers. Maps on a summoners rift model
 
-+ /test
-  + Functional demo of dynamically plotting average kill location of recent jungler's jungle games.
   
