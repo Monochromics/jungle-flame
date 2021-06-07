@@ -109,8 +109,9 @@ func kaLocaleAverage(kaEvents []KAEvent) (avgX, avgY int) {
 		totalX += event.X
 		totalY += event.Y
 	}
-	avgX = totalX / totalEvent
-	avgY = totalY / totalEvent
-
+	if totalEvent != 0 {
+		avgX = totalX / totalEvent
+		avgY = totalY / totalEvent
+	}
 	return
 }

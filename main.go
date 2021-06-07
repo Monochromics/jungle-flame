@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -59,7 +60,13 @@ func avgKillCoord(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 	summoner, _ := summonerByName(ps.ByName("name"), payloadE)
 	list := matchesByAcc(summoner, payloadE)
 	gamedataArray := matchDataGrab(payloadE, list)
-	kaEvents := killAssistLocale(ps.ByName("name"), payloadE, gamedataArray, 90000000)
+	time, err := strconv.Atoi(ps.ByName("time"))
+	if err != nil {
+		time = 90000000
+	}
+
+	println(fmt.Sprint(time))
+	kaEvents := killAssistLocale(ps.ByName("name"), payloadE, gamedataArray, int(time))
 	avgX, avgY := kaLocaleAverage(kaEvents)
 
 	coordArr := [2]int{avgX, avgY}
@@ -96,6 +103,11 @@ func jungleLiveKL(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 		Coords      []int
 	}
 
+	time, err := strconv.Atoi(ps.ByName("time"))
+	if err != nil {
+		time = 900000
+	}
+
 	dataArray := [2]JunglerData{}
 	for i, a := range junglerNames {
 		println(a)
@@ -107,7 +119,7 @@ func jungleLiveKL(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 		println(jSumm)
 		matches := matchesByRole(jSumm, payloadE, "JUNGLE")
 		matchData := matchDataGrab(payloadE, matches)
-		kaEvents := killAssistLocale(a, payloadE, matchData, 900000)
+		kaEvents := killAssistLocale(a, payloadE, matchData, time)
 		avgX, avgY := kaLocaleAverage(kaEvents)
 		coords := []int{avgX, avgY}
 		out := JunglerData{JunglerName: a, Coords: coords}
@@ -143,9 +155,11 @@ func handleRequests() {
 
 	router := httprouter.New()
 	router.GET("/", homePage)
-	router.GET("/kills/:name", avgKillCoord)
 	router.GET("/summoner/:name", fuckingFeeder)
+	router.GET("/kills/:name", avgKillCoord)
+	router.GET("/kills/:name/:time", avgKillCoord)
 	router.GET("/jkl/:name", jungleLiveKL)
+	router.GET("/jkl/:name/:time", jungleLiveKL)
 
 	router.ServeFiles("/static/*filepath", http.Dir("static"))
 
