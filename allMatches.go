@@ -114,6 +114,26 @@ func matchDataGrab(payload string, gameID []int64) (gamedataArray []Game) {
 	return
 }
 
+func matchEventData(payload string, gameID int64) (eventdata GameEvent) {
+	resp, err := http.Get("https://na1.api.riotgames.com/lol/match/v4/timelines/by-match/" + fmt.Sprint(gameID) + "?" + payload)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	err = json.Unmarshal(body, &eventdata)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	return
+}
+
 func matchFeedCheck(name string, gamedataArray []Game) (killz, deathz, assistz int, champName, gtime string) {
 	for _, gamedata := range gamedataArray {
 		var pid int
@@ -145,7 +165,6 @@ func killAssistLocale(name, payload string, gamedataArray []Game) (totalEvent, t
 
 	for _, gamedata := range gamedataArray {
 		println("GameId: " + fmt.Sprint(gamedata.GameID))
-
 		var pid int
 		for i := range gamedata.ParticipantIdentities {
 			if strings.Compare(strings.ToUpper(strings.TrimSpace(string(gamedata.ParticipantIdentities[i].Player.SummonerName))), strings.ToUpper(name)) == 0 {
@@ -153,40 +172,23 @@ func killAssistLocale(name, payload string, gamedataArray []Game) (totalEvent, t
 			}
 		}
 
-		resp, err := http.Get("https://na1.api.riotgames.com/lol/match/v4/timelines/by-match/" + fmt.Sprint(gamedata.GameID) + "?" + payload)
-		if err != nil {
-			log.Fatalln(err)
-		}
-
-		defer resp.Body.Close()
-
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			log.Fatalln(err)
-		}
-
-		var eventdata GameEvent
-
-		err = json.Unmarshal(body, &eventdata)
-		if err != nil {
-			log.Fatalln(err)
-		}
+		eventdata := matchEventData(payload, gamedata.GameID)
 
 		for i := range eventdata.Frames {
 			for a := range eventdata.Frames[i].Events {
-				if eventdata.Frames[i].Events[a].Type == "CHAMPION_KILL" {
-					if eventdata.Frames[i].Events[a].Timestamp <= 900000 {
-						if fmt.Sprint(eventdata.Frames[i].Events[a].Killer) == fmt.Sprint(pid) {
+				champKillBool := (eventdata.Frames[i].Events[a].Type == "CHAMPION_KILL")
+				before15Mins := (eventdata.Frames[i].Events[a].Timestamp <= 900000)
+				if champKillBool && before15Mins {
+					if fmt.Sprint(eventdata.Frames[i].Events[a].Killer) == fmt.Sprint(pid) {
+						totalEvent = totalEvent + 1
+						totalX = totalX + eventdata.Frames[i].Events[a].Pos.X
+						totalY = totalY + eventdata.Frames[i].Events[a].Pos.Y
+					}
+					for x := range eventdata.Frames[i].Events[a].Assist {
+						if pid == eventdata.Frames[i].Events[a].Assist[x] {
 							totalEvent = totalEvent + 1
 							totalX = totalX + eventdata.Frames[i].Events[a].Pos.X
 							totalY = totalY + eventdata.Frames[i].Events[a].Pos.Y
-						}
-						for x := range eventdata.Frames[i].Events[a].Assist {
-							if pid == eventdata.Frames[i].Events[a].Assist[x] {
-								totalEvent = totalEvent + 1
-								totalX = totalX + eventdata.Frames[i].Events[a].Pos.X
-								totalY = totalY + eventdata.Frames[i].Events[a].Pos.Y
-							}
 						}
 					}
 				}
