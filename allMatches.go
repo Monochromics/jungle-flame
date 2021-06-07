@@ -158,7 +158,7 @@ func matchFeedCheck(name string, gamedataArray []Game) (killz, deathz, assistz i
 	return
 }
 
-func killAssistLocale(name, payload string, gamedataArray []Game) (totalEvent, totalX, totalY int) {
+func killAssistLocale(name, payload string, gamedataArray []Game, maxtime int) (totalEvent, totalX, totalY int) {
 	totalEvent = 0
 	totalX = 0
 	totalY = 0
@@ -177,7 +177,7 @@ func killAssistLocale(name, payload string, gamedataArray []Game) (totalEvent, t
 		for i := range eventdata.Frames {
 			for a := range eventdata.Frames[i].Events {
 				champKillBool := (eventdata.Frames[i].Events[a].Type == "CHAMPION_KILL")
-				before15Mins := (eventdata.Frames[i].Events[a].Timestamp <= 900000)
+				before15Mins := (eventdata.Frames[i].Events[a].Timestamp <= maxtime)
 				if champKillBool && before15Mins {
 					if fmt.Sprint(eventdata.Frames[i].Events[a].Killer) == fmt.Sprint(pid) {
 						totalEvent = totalEvent + 1

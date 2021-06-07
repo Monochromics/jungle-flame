@@ -59,7 +59,7 @@ func avgKillCoord(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 	summoner, _ := summonerByName(ps.ByName("name"), payloadE)
 	list := matchesByAcc(summoner, payloadE)
 	gamedataArray := matchDataGrab(payloadE, list)
-	tEvent, tX, tY := killAssistLocale(ps.ByName("name"), payloadE, gamedataArray)
+	tEvent, tX, tY := killAssistLocale(ps.ByName("name"), payloadE, gamedataArray, 90000000)
 	avgX := tX / tEvent
 	avgY := tY / tEvent
 
@@ -108,7 +108,7 @@ func jungleLiveKL(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 		println(jSumm)
 		matches := matchesByRole(jSumm, payloadE, "JUNGLE")
 		matchData := matchDataGrab(payloadE, matches)
-		tEvent, tX, tY := killAssistLocale(a, payloadE, matchData)
+		tEvent, tX, tY := killAssistLocale(a, payloadE, matchData, 900000)
 		avgX := tX / tEvent
 		avgY := tY / tEvent
 		coords := []int{avgX, avgY}
