@@ -21,10 +21,10 @@ type Config struct {
 func LoadConfiguration(file string) {
 	var config Config
 	configFile, err := os.Open(file)
-	defer configFile.Close()
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Fatalln(err.Error())
 	}
+	defer configFile.Close()
 	jsonParser := json.NewDecoder(configFile)
 	jsonParser.Decode(&config)
 	os.Setenv("APIKEY", config.RiotKey)
@@ -59,9 +59,8 @@ func avgKillCoord(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 	summoner, _ := summonerByName(ps.ByName("name"), payloadE)
 	list := matchesByAcc(summoner, payloadE)
 	gamedataArray := matchDataGrab(payloadE, list)
-	tEvent, tX, tY := killAssistLocale(ps.ByName("name"), payloadE, gamedataArray, 90000000)
-	avgX := tX / tEvent
-	avgY := tY / tEvent
+	kaEvents := killAssistLocale(ps.ByName("name"), payloadE, gamedataArray, 90000000)
+	avgX, avgY := kaLocaleAverage(kaEvents)
 
 	coordArr := [2]int{avgX, avgY}
 	soloKillMap(w, r, ps, coordArr[:])
@@ -108,9 +107,8 @@ func jungleLiveKL(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 		println(jSumm)
 		matches := matchesByRole(jSumm, payloadE, "JUNGLE")
 		matchData := matchDataGrab(payloadE, matches)
-		tEvent, tX, tY := killAssistLocale(a, payloadE, matchData, 900000)
-		avgX := tX / tEvent
-		avgY := tY / tEvent
+		kaEvents := killAssistLocale(a, payloadE, matchData, 900000)
+		avgX, avgY := kaLocaleAverage(kaEvents)
 		coords := []int{avgX, avgY}
 		out := JunglerData{JunglerName: a, Coords: coords}
 		dataArray[i] = out

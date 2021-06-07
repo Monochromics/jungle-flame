@@ -64,31 +64,6 @@ type Game struct {
 	Participants          []Participants          `json:"participants"`
 }
 
-//GameEvent data for given match
-type GameEvent struct {
-	Frames []Frames `json:"frames"`
-}
-
-//KillEvent data
-type KillEvent struct {
-	Type      string   `json:"type"`
-	Timestamp int      `json:"timestamp"`
-	Pos       Position `json:"position"`
-	Killer    int      `json:"killerId"`
-	Assist    []int    `json:"assistingParticipantIds"`
-}
-
-//Position of player
-type Position struct {
-	X int `json:"x"`
-	Y int `json:"y"`
-}
-
-//Frames of events
-type Frames struct {
-	Events []KillEvent `json:"events"`
-}
-
 func matchDataGrab(payload string, gameID []int64) (gamedataArray []Game) {
 	for _, s := range gameID {
 		resp, err := http.Get("https://na1.api.riotgames.com/lol/match/v4/matches/" + fmt.Sprint(s) + "?" + payload)
@@ -114,26 +89,6 @@ func matchDataGrab(payload string, gameID []int64) (gamedataArray []Game) {
 	return
 }
 
-func matchEventData(payload string, gameID int64) (eventdata GameEvent) {
-	resp, err := http.Get("https://na1.api.riotgames.com/lol/match/v4/timelines/by-match/" + fmt.Sprint(gameID) + "?" + payload)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	err = json.Unmarshal(body, &eventdata)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	return
-}
-
 func matchFeedCheck(name string, gamedataArray []Game) (killz, deathz, assistz int, champName, gtime string) {
 	for _, gamedata := range gamedataArray {
 		var pid int
@@ -153,46 +108,6 @@ func matchFeedCheck(name string, gamedataArray []Game) (killz, deathz, assistz i
 			gtime = t.Format("01-02-2006 15:04")
 			champName = CLookup(gamedata.Participants[pid].ChampionID)
 			break
-		}
-	}
-	return
-}
-
-func killAssistLocale(name, payload string, gamedataArray []Game, maxtime int) (totalEvent, totalX, totalY int) {
-	totalEvent = 0
-	totalX = 0
-	totalY = 0
-
-	for _, gamedata := range gamedataArray {
-		println("GameId: " + fmt.Sprint(gamedata.GameID))
-		var pid int
-		for i := range gamedata.ParticipantIdentities {
-			if strings.Compare(strings.ToUpper(strings.TrimSpace(string(gamedata.ParticipantIdentities[i].Player.SummonerName))), strings.ToUpper(name)) == 0 {
-				pid = i + 1
-			}
-		}
-
-		eventdata := matchEventData(payload, gamedata.GameID)
-
-		for i := range eventdata.Frames {
-			for a := range eventdata.Frames[i].Events {
-				champKillBool := (eventdata.Frames[i].Events[a].Type == "CHAMPION_KILL")
-				before15Mins := (eventdata.Frames[i].Events[a].Timestamp <= maxtime)
-				if champKillBool && before15Mins {
-					if fmt.Sprint(eventdata.Frames[i].Events[a].Killer) == fmt.Sprint(pid) {
-						totalEvent = totalEvent + 1
-						totalX = totalX + eventdata.Frames[i].Events[a].Pos.X
-						totalY = totalY + eventdata.Frames[i].Events[a].Pos.Y
-					}
-					for x := range eventdata.Frames[i].Events[a].Assist {
-						if pid == eventdata.Frames[i].Events[a].Assist[x] {
-							totalEvent = totalEvent + 1
-							totalX = totalX + eventdata.Frames[i].Events[a].Pos.X
-							totalY = totalY + eventdata.Frames[i].Events[a].Pos.Y
-						}
-					}
-				}
-			}
 		}
 	}
 	return
