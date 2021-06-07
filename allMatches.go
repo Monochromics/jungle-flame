@@ -120,6 +120,7 @@ func matchFeedCheck(name string, gamedataArray []Game) (killz, deathz, assistz i
 		for i := range gamedata.ParticipantIdentities {
 			if strings.Compare(strings.ToUpper(strings.TrimSpace(string(gamedata.ParticipantIdentities[i].Player.SummonerName))), strings.ToUpper(name)) == 0 {
 				pid = i
+				break
 			}
 		}
 
