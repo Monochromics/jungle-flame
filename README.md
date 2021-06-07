@@ -1,7 +1,7 @@
 # jungle-flame
 
 Scratch code for learning golang. Everyone dislikes their jungler. Now you can dislike yours with science.
-
+Currently hard coded to NA interface. ez change in the future
 
 'Works' mostly out of the box. Just make a api_conf.json and pump in your riot api key
 ```
