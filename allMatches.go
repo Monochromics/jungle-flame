@@ -89,8 +89,8 @@ type Frames struct {
 	Events []KillEvent `json:"events"`
 }
 
-func matchFeedCheck(name, payload string, list []int64) (killz, deathz, assistz int, champName, gtime string) {
-	for _, s := range list {
+func matchDataGrab(payload string, gameID []int64) (gamedataArray []Game) {
+	for _, s := range gameID {
 		resp, err := http.Get("https://na1.api.riotgames.com/lol/match/v4/matches/" + fmt.Sprint(s) + "?" + payload)
 		if err != nil {
 			log.Fatalln(err)
@@ -109,7 +109,13 @@ func matchFeedCheck(name, payload string, list []int64) (killz, deathz, assistz 
 		if err != nil {
 			log.Fatalln(err)
 		}
+		gamedataArray = append(gamedataArray, gamedata)
+	}
+	return
+}
 
+func matchFeedCheck(name string, gamedataArray []Game) (killz, deathz, assistz int, champName, gtime string) {
+	for _, gamedata := range gamedataArray {
 		var pid int
 		for i := range gamedata.ParticipantIdentities {
 			if strings.Compare(strings.ToUpper(strings.TrimSpace(string(gamedata.ParticipantIdentities[i].Player.SummonerName))), strings.ToUpper(name)) == 0 {
@@ -131,31 +137,13 @@ func matchFeedCheck(name, payload string, list []int64) (killz, deathz, assistz 
 	return
 }
 
-func killAssistLocale(name, payload string, list []int64) (totalEvent, totalX, totalY int) {
+func killAssistLocale(name, payload string, gamedataArray []Game) (totalEvent, totalX, totalY int) {
 	totalEvent = 0
 	totalX = 0
 	totalY = 0
 
-	for _, s := range list {
-		println("GameId: " + fmt.Sprint(s))
-		resp, err := http.Get("https://na1.api.riotgames.com/lol/match/v4/matches/" + fmt.Sprint(s) + "?" + payload)
-		if err != nil {
-			log.Fatalln(err)
-		}
-
-		defer resp.Body.Close()
-
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			log.Fatalln(err)
-		}
-
-		var gamedata Game
-
-		err = json.Unmarshal(body, &gamedata)
-		if err != nil {
-			log.Fatalln(err)
-		}
+	for _, gamedata := range gamedataArray {
+		println("GameId: " + fmt.Sprint(gamedata.GameID))
 
 		var pid int
 		for i := range gamedata.ParticipantIdentities {
@@ -164,14 +152,14 @@ func killAssistLocale(name, payload string, list []int64) (totalEvent, totalX, t
 			}
 		}
 
-		resp, err = http.Get("https://na1.api.riotgames.com/lol/match/v4/timelines/by-match/" + fmt.Sprint(s) + "?" + payload)
+		resp, err := http.Get("https://na1.api.riotgames.com/lol/match/v4/timelines/by-match/" + fmt.Sprint(gamedata.GameID) + "?" + payload)
 		if err != nil {
 			log.Fatalln(err)
 		}
 
 		defer resp.Body.Close()
 
-		body, err = ioutil.ReadAll(resp.Body)
+		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			log.Fatalln(err)
 		}

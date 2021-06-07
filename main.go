@@ -41,8 +41,9 @@ func fuckingFeeder(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	payloadE := payload.Encode()
 	summoner, _ := summonerByName(ps.ByName("name"), payloadE)
 	list := matchesByAcc(summoner, payloadE)
+	matchData := matchDataGrab(payloadE, list)
 
-	kill, death, assist, champN, gamet := matchFeedCheck(ps.ByName("name"), payloadE, list)
+	kill, death, assist, champN, gamet := matchFeedCheck(ps.ByName("name"), matchData)
 
 	fmt.Fprintf(w, "Last time "+ps.ByName("name")+" fed:\n")
 	fmt.Fprintf(w, fmt.Sprint(kill)+"/"+fmt.Sprint(death)+"/"+fmt.Sprint(assist)+"     "+champN+"\n")
@@ -57,7 +58,8 @@ func avgKillCoord(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 	payloadE := payload.Encode()
 	summoner, _ := summonerByName(ps.ByName("name"), payloadE)
 	list := matchesByAcc(summoner, payloadE)
-	tEvent, tX, tY := killAssistLocale(ps.ByName("name"), payloadE, list)
+	gamedataArray := matchDataGrab(payloadE, list)
+	tEvent, tX, tY := killAssistLocale(ps.ByName("name"), payloadE, gamedataArray)
 	avgX := tX / tEvent
 	avgY := tY / tEvent
 
@@ -105,18 +107,14 @@ func jungleLiveKL(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 		}
 		println(jSumm)
 		matches := matchesByRole(jSumm, payloadE, "JUNGLE")
-		tEvent, tX, tY := killAssistLocale(a, payloadE, matches)
+		matchData := matchDataGrab(payloadE, matches)
+		tEvent, tX, tY := killAssistLocale(a, payloadE, matchData)
 		avgX := tX / tEvent
 		avgY := tY / tEvent
-		//fmt.Fprintf(w, a+"\n")
-		//fmt.Fprintf(w, "Average X:  "+fmt.Sprint(avgX)+"\n")
-		//fmt.Fprintf(w, "Average Y:  "+fmt.Sprint(avgY)+"\n")
 		coords := []int{avgX, avgY}
 		out := JunglerData{JunglerName: a, Coords: coords}
 		dataArray[i] = out
 	}
-	println(dataArray[1].JunglerName)
-	println(fmt.Sprint(dataArray[0].Coords))
 	jungleKillMaps(w, r, ps, dataArray[0].JunglerName, dataArray[0].Coords, dataArray[1].JunglerName, dataArray[1].Coords)
 
 }
