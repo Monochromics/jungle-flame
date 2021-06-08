@@ -40,7 +40,7 @@ func fuckingFeeder(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	payload := url.Values{}
 	payload.Add("api_key", os.Getenv("APIKEY"))
 	payloadE := payload.Encode()
-	summoner, _ := summonerByName(ps.ByName("name"), payloadE)
+	summoner := summonerByName(ps.ByName("name"), payloadE).AccountID
 	list := matchesByAcc(summoner, payloadE)
 	matchData := matchDataGrab(payloadE, list)
 
@@ -57,7 +57,7 @@ func avgKillCoord(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 	payload := url.Values{}
 	payload.Add("api_key", os.Getenv("APIKEY"))
 	payloadE := payload.Encode()
-	summoner, _ := summonerByName(ps.ByName("name"), payloadE)
+	summoner := summonerByName(ps.ByName("name"), payloadE).AccountID
 	list := matchesByAcc(summoner, payloadE)
 	gamedataArray := matchDataGrab(payloadE, list)
 	time, err := strconv.Atoi(ps.ByName("time"))
@@ -95,7 +95,7 @@ func jungleLiveKL(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 	payload.Add("api_key", os.Getenv("APIKEY"))
 	payloadE := payload.Encode()
 
-	_, id := summonerByName(ps.ByName("name"), payloadE)
+	id := summonerByName(ps.ByName("name"), payloadE).ID
 	junglerNames := liveGameJunglers(id, payloadE)
 
 	type JunglerData struct {
@@ -111,7 +111,7 @@ func jungleLiveKL(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 	dataArray := [2]JunglerData{}
 	for i, a := range junglerNames {
 		println(a)
-		jSumm, _ := summonerByName(a, payloadE)
+		jSumm := summonerByName(a, payloadE).AccountID
 		if jSumm == "" {
 			println("FAILED TO GET SUMM ID FOR : " + a)
 			break
