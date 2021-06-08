@@ -8,36 +8,26 @@ import (
 )
 
 //BySummoner search by summoner name return
-type BySummoner struct {
-	ID            string `json:"id"`
-	AccountID     string `json:"accountId"`
-	Puuid         string `json:"puuid"`
-	Name          string `json:"name"`
-	ProfileIconID int    `json:"profileIconId"`
-	RevisionDate  int64  `json:"revisionDate"`
-	SummonerLevel int    `json:"summonerLevel"`
+type Summoner struct {
+	ID        string `json:"id"`
+	AccountID string `json:"accountId"`
+	Puuid     string `json:"puuid"`
+	Name      string `json:"name"`
 }
 
-func summonerByName(name, payload string) (accountID, summID string) {
+func summonerByName(name, payload string) (summoner Summoner) {
 	resp, err := http.Get("https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/" + name + "?" + payload)
 	if err != nil {
 		log.Fatalln(err)
 	}
-
 	defer resp.Body.Close()
-
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatalln(err)
 	}
-
-	var sbody BySummoner
-
-	err = json.Unmarshal(body, &sbody)
+	err = json.Unmarshal(body, &summoner)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	accountID = sbody.AccountID
-	summID = sbody.ID
 	return
 }
