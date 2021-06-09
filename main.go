@@ -42,7 +42,7 @@ func fuckingFeeder(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	payloadE := payload.Encode()
 	summoner := summonerByName(ps.ByName("name"), payloadE).AccountID
 	list := matchesByAcc(summoner, payloadE)
-	matchData := matchDataGrab(payloadE, list)
+	matchData := matchDataGrab(payloadE, list, c)
 
 	kill, death, assist, champN, gamet := matchFeedCheck(ps.ByName("name"), matchData)
 
@@ -59,7 +59,7 @@ func avgKillCoord(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 	payloadE := payload.Encode()
 	summoner := summonerByName(ps.ByName("name"), payloadE).AccountID
 	list := matchesByAcc(summoner, payloadE)
-	gamedataArray := matchDataGrab(payloadE, list)
+	gamedataArray := matchDataGrab(payloadE, list, c)
 	time, err := strconv.Atoi(ps.ByName("time"))
 	if err != nil {
 		time = 90000000
@@ -118,7 +118,7 @@ func jungleLiveKL(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 		}
 		println(jSumm)
 		matches := matchesByRole(jSumm, payloadE, "JUNGLE")
-		matchData := matchDataGrab(payloadE, matches)
+		matchData := matchDataGrab(payloadE, matches, c)
 		kaEvents := killAssistLocale(a, payloadE, matchData, time)
 		avgX, avgY := kaLocaleAverage(kaEvents)
 		coords := []int{avgX, avgY}
@@ -168,5 +168,6 @@ func handleRequests() {
 
 func main() {
 	LoadConfiguration("api_conf.json")
+	c = cacheInit()
 	handleRequests()
 }

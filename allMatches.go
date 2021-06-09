@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/dgraph-io/ristretto"
 )
 
 //Stats of given game
@@ -64,25 +66,31 @@ type Game struct {
 	Participants          []Participants          `json:"participants"`
 }
 
-func matchDataGrab(payload string, gameID []int64) (gamedataArray []Game) {
+func matchDataGrab(payload string, gameID []int64, c *ristretto.Cache) (gamedataArray []Game) {
 	for _, s := range gameID {
-		resp, err := http.Get("https://na1.api.riotgames.com/lol/match/v4/matches/" + fmt.Sprint(s) + "?" + payload)
-		if err != nil {
-			log.Fatalln(err)
-		}
-
-		defer resp.Body.Close()
-
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			log.Fatalln(err)
-		}
-
 		var gamedata Game
 
-		err = json.Unmarshal(body, &gamedata)
-		if err != nil {
-			log.Fatalln(err)
+		value, found := c.Get(fmt.Sprint(s))
+
+		if found {
+			gamedata = value.(Game)
+		} else {
+			resp, err := http.Get("https://na1.api.riotgames.com/lol/match/v4/matches/" + fmt.Sprint(s) + "?" + payload)
+			if err != nil {
+				log.Fatalln(err)
+			}
+			defer resp.Body.Close()
+
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				log.Fatalln(err)
+			}
+			err = json.Unmarshal(body, &gamedata)
+			if err != nil {
+				log.Fatalln(err)
+			}
+			c.Set(fmt.Sprint(s), gamedata, 1)
+			println(fmt.Sprint(gamedata.GameVersion))
 		}
 		gamedataArray = append(gamedataArray, gamedata)
 	}
